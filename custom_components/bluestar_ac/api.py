@@ -6,8 +6,16 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import aiohttp
-import paho.mqtt.client as mqtt_client
-import ssl
+
+# Try to import MQTT, but make it optional
+try:
+    import paho.mqtt.client as mqtt_client
+    import ssl
+    MQTT_AVAILABLE = True
+except ImportError:
+    MQTT_AVAILABLE = False
+    _LOGGER = logging.getLogger(__name__)
+    _LOGGER.warning("paho-mqtt not available, MQTT functionality disabled")
 
 from .const import (
     DEFAULT_BASE_URL,
@@ -89,6 +97,9 @@ class BluestarMQTTClient:
     """MQTT client for Bluestar Smart AC control."""
     
     def __init__(self, credentials: Dict[str, str]):
+        if not MQTT_AVAILABLE:
+            raise ImportError("MQTT functionality not available - paho-mqtt not installed")
+            
         self.credentials = credentials
         self.client = None
         self.is_connected = False
@@ -374,6 +385,10 @@ class BluestarAPI:
 
     async def _initialize_mqtt_client(self, login_data: Dict[str, Any]) -> bool:
         """Initialize MQTT client with credentials from login response."""
+        if not MQTT_AVAILABLE:
+            _LOGGER.warning("⚠️ MQTT not available - using HTTP-only mode")
+            return False
+            
         try:
             # Extract credentials from login response
             credentials = self.credential_extractor.extract_credentials(login_data)
@@ -473,7 +488,7 @@ class BluestarAPI:
         control_result = None
         
         # Step 1: Try EXACT MQTT control (PRIMARY METHOD from decompiled app)
-        if self.mqtt_client and self.mqtt_client.is_connected:
+        if MQTT_AVAILABLE and self.mqtt_client and self.mqtt_client.is_connected:
             try:
                 _LOGGER.info(f"📤 Step 1: Sending EXACT MQTT control: {json.dumps(control_payload, indent=2)}")
                 
@@ -488,7 +503,10 @@ class BluestarAPI:
             except Exception as error:
                 _LOGGER.warning(f"⚠️ EXACT MQTT control failed: {error}")
         else:
-            _LOGGER.warning("⚠️ EXACT MQTT client not available, trying HTTP API fallback")
+            if not MQTT_AVAILABLE:
+                _LOGGER.info("⚠️ MQTT not available, using HTTP API only")
+            else:
+                _LOGGER.warning("⚠️ EXACT MQTT client not available, trying HTTP API fallback")
 
         # Step 2: HTTP API fallback with EXACT MODE CONTROL MECHANISM
         if not control_result:
@@ -592,7 +610,7 @@ class BluestarAPI:
                 _LOGGER.info("📤 Step 3: Sending force sync")
                 force_sync_payload = {"fpsh": 1}
                 
-                if self.mqtt_client and self.mqtt_client.is_connected:
+                if MQTT_AVAILABLE and self.mqtt_client and self.mqtt_client.is_connected:
                     success = self.mqtt_client.force_sync(device_id)
                     if success:
                         _LOGGER.info("✅ Force sync via EXACT MQTT")
