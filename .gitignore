@@ -142,5 +142,8 @@ Thumbs.db
 # Home Assistant
 .homeassistant/
 
-# Custom components
-custom_components/
+# Home Assistant
+.homeassistant/
+
+# Custom components (commented out for HACS integration)
+# custom_components/
