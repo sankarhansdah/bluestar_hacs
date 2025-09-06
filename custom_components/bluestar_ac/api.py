@@ -274,6 +274,14 @@ class BluestarAPI:
         if self._session:
             await self._session.close()
 
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()
+
     def _get_auth_headers(self, session_token: Optional[str] = None) -> Dict[str, str]:
         """Get authentication headers (EXACTLY matching the Android app)."""
         token = session_token or self.session_token
