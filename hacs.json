@@ -1,0 +1,9 @@
+{
+  "name": "Bluestar Smart AC (Unofficial)",
+  "content_in_root": false,
+  "filename": "bluestar_ac",
+  "country": ["IN"],
+  "homeassistant": "2023.1.0",
+  "render_readme": true,
+  "iot_class": "Cloud Polling"
+}
