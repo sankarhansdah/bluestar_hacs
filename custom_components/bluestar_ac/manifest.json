@@ -9,5 +9,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/sankarhansdah/bluestar_hacs/issues",
   "requirements": ["aiohttp>=3.8.0"],
-  "version": "1.0.0"
+  "version": "1.1.0",
+  "logo": "https://raw.githubusercontent.com/sankarhansdah/bluestar_hacs/main/logo.png"
 }
