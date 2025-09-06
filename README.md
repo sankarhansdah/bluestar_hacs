@@ -25,7 +25,7 @@ An **unofficial** Home Assistant integration for Bluestar Smart AC units. This i
 1. **Add Custom Repository**:
    - Open HACS → Integrations
    - Click the three dots menu → Custom repositories
-   - Add repository: `bluestar-integration/bluestar_hacs`
+   - Add repository: `sankarhansdah/bluestar_hacs`
    - Category: Integration
 
 2. **Install Integration**:
@@ -44,7 +44,7 @@ An **unofficial** Home Assistant integration for Bluestar Smart AC units. This i
 1. **Download Integration**:
    ```bash
    cd /config/custom_components
-   git clone https://github.com/bluestar-integration/bluestar_hacs.git bluestar_ac
+   git clone https://github.com/sankarhansdah/bluestar_hacs.git bluestar_ac
    ```
 
 2. **Restart Home Assistant**
