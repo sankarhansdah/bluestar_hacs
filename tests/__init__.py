@@ -49,3 +49,6 @@ async def test_async_setup_entry(hass: HomeAssistant, mock_config_entry):
         assert result is True
         assert DOMAIN in hass.data
         assert mock_config_entry.entry_id in hass.data[DOMAIN]
+
+
+

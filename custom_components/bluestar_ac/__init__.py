@@ -10,7 +10,6 @@ from homeassistant.core import HomeAssistant
 from .api import BluestarAPI
 from .const import (
     CONF_BASE_URL,
-    CONF_MQTT_GATEWAY_URL,
     CONF_PASSWORD,
     CONF_PHONE,
     DOMAIN,
@@ -36,7 +35,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     api = BluestarAPI(
         phone=entry.data[CONF_PHONE],
         password=entry.data[CONF_PASSWORD],
-        mqtt_gateway_url=entry.data.get(CONF_MQTT_GATEWAY_URL),
         base_url=entry.data.get(CONF_BASE_URL),
     )
 
@@ -68,3 +66,6 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload config entry."""
     await async_unload_entry(hass, entry)
     await async_setup_entry(hass, entry)
+
+
+

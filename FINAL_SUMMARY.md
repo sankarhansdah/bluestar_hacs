@@ -147,3 +147,6 @@ git push -u origin main
 The integration will work perfectly for the general public while still supporting your advanced MQTT gateway for users who want enhanced performance.
 
 **Your Bluestar Smart AC integration is now ready to help thousands of Home Assistant users control their ACs!** 🎉
+
+
+

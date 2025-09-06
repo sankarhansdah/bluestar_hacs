@@ -3,11 +3,10 @@
     "step": {
       "user": {
         "title": "Bluestar Smart AC Setup",
-        "description": "Configure your Bluestar Smart AC integration. This integration works standalone by connecting directly to the Bluestar API. You can optionally use an MQTT gateway for enhanced performance.",
+        "description": "Configure your Bluestar Smart AC integration. This integration works standalone by connecting directly to the Bluestar API with built-in MQTT support for optimal performance.",
         "data": {
           "phone": "Phone Number",
           "password": "Password",
-          "mqtt_gateway_url": "MQTT Gateway URL (optional - for enhanced performance)",
           "base_url": "Bluestar API Base URL"
         }
       }
@@ -27,7 +26,6 @@
         "title": "Bluestar Smart AC Options",
         "description": "Configure additional options for your Bluestar Smart AC integration.",
         "data": {
-          "mqtt_gateway_url": "MQTT Gateway URL (optional - for enhanced performance)",
           "base_url": "Bluestar API Base URL"
         }
       }

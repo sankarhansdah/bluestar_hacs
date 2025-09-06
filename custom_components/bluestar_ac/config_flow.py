@@ -13,7 +13,6 @@ from homeassistant.exceptions import HomeAssistantError
 from .api import BluestarAPI, BluestarAPIError
 from .const import (
     CONF_BASE_URL,
-    CONF_MQTT_GATEWAY_URL,
     CONF_PASSWORD,
     CONF_PHONE,
     DEFAULT_BASE_URL,
@@ -26,7 +25,6 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_PHONE): str,
         vol.Required(CONF_PASSWORD): str,
-        vol.Optional(CONF_MQTT_GATEWAY_URL, default=""): str,
         vol.Optional(CONF_BASE_URL, default=DEFAULT_BASE_URL): str,
     }
 )
@@ -45,7 +43,6 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
     api = BluestarAPI(
         phone=data[CONF_PHONE],
         password=data[CONF_PASSWORD],
-        mqtt_gateway_url=data.get(CONF_MQTT_GATEWAY_URL) or None,
         base_url=data[CONF_BASE_URL],
     )
 
@@ -62,7 +59,7 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
                 raise CannotConnect("No devices found")
             
             # Determine connection method for title
-            connection_method = "Gateway" if data.get(CONF_MQTT_GATEWAY_URL) else "Direct API"
+            connection_method = "Standalone (MQTT + API)"
             
             _LOGGER.info(f"Found {len(devices)} devices")
             return {
@@ -146,10 +143,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(
-                        CONF_MQTT_GATEWAY_URL,
-                        default=self.config_entry.options.get(CONF_MQTT_GATEWAY_URL, ""),
-                    ): str,
                     vol.Optional(
                         CONF_BASE_URL,
                         default=self.config_entry.options.get(CONF_BASE_URL, DEFAULT_BASE_URL),

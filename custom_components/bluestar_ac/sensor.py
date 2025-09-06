@@ -104,3 +104,6 @@ class BluestarErrorSensorEntity(CoordinatorEntity, SensorEntity):
         """Return if entity is available."""
         state = self.coordinator.get_device_state(self.device_id)
         return state is not None and state.get("connected", False)
+
+
+

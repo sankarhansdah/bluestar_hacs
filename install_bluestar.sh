@@ -87,3 +87,6 @@ echo "5. Search for: 'Bluestar Smart AC'"
 echo "6. Enter your phone number and password"
 echo ""
 echo "🌡️  Enjoy controlling your Bluestar Smart AC through Home Assistant!"
+
+
+

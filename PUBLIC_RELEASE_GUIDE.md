@@ -149,3 +149,6 @@ Your integration is now:
 **Users can now install and use your integration with just their Bluestar credentials - no technical setup required!**
 
 The integration will work perfectly for the general public while still supporting your advanced MQTT gateway for users who want enhanced performance.
+
+
+

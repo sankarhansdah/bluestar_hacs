@@ -73,3 +73,6 @@ class BluestarDisplaySwitchEntity(CoordinatorEntity, SwitchEntity):
         """Turn the switch off."""
         control_data = {"display": 0}
         await self.coordinator.control_device(self.device_id, control_data)
+
+
+

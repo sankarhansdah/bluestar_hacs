@@ -191,3 +191,6 @@ target:
 - **HACS Ready**: Passes all validation checks
 
 The integration is now ready for deployment and will provide Home Assistant users with full control over their Bluestar Smart AC devices using your proven, working implementation!
+
+
+

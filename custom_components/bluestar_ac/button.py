@@ -59,3 +59,6 @@ class BluestarForceSyncButtonEntity(CoordinatorEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         await self.coordinator.force_sync_device(self.device_id)
+
+
+

@@ -181,3 +181,6 @@ class BluestarClimateEntity(CoordinatorEntity, ClimateEntity):
             control_data["hswing"] = 0
         
         await self.coordinator.control_device(self.device_id, control_data)
+
+
+

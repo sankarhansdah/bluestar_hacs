@@ -124,3 +124,6 @@ class BluestarHorizontalSwingSelectEntity(CoordinatorEntity, SelectEntity):
         value = SWING_LABEL_TO_VALUE.get(option, 0)
         control_data = {"hswing": value}
         await self.coordinator.control_device(self.device_id, control_data)
+
+
+

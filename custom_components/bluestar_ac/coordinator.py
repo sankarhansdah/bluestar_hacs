@@ -142,3 +142,6 @@ class BluestarDataUpdateCoordinator(DataUpdateCoordinator):
     def get_all_devices(self) -> Dict[str, Any]:
         """Get all devices."""
         return self.data.get("devices", {})
+
+
+
