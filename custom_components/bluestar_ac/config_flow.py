@@ -51,7 +51,9 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
 
     try:
         async with api as api_client:
+            _LOGGER.info("Attempting to connect to Bluestar API...")
             await api_client.login()
+            _LOGGER.info("Login successful, fetching devices...")
             devices_data = await api_client.get_devices()
             
             # Extract device information
@@ -62,14 +64,24 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
             # Determine connection method for title
             connection_method = "Gateway" if data.get(CONF_MQTT_GATEWAY_URL) else "Direct API"
             
+            _LOGGER.info(f"Found {len(devices)} devices")
             return {
                 "title": f"Bluestar Smart AC ({len(devices)} devices) - {connection_method}",
                 "devices": devices,
             }
     except BluestarAPIError as err:
-        if "Login failed" in str(err) or "401" in str(err):
-            raise InvalidAuth("Invalid credentials")
-        raise CannotConnect(f"Cannot connect: {err}")
+        _LOGGER.error(f"Bluestar API error: {err}")
+        if "Invalid credentials" in str(err) or "401" in str(err):
+            raise InvalidAuth("Invalid credentials. Please check your phone number and password.")
+        elif "403" in str(err):
+            raise InvalidAuth("Access forbidden. Your account may be restricted.")
+        elif "Login failed with all phone number formats" in str(err):
+            raise InvalidAuth("Login failed. Please verify your phone number and password.")
+        else:
+            raise CannotConnect(f"Unable to connect to Bluestar API: {err}")
+    except Exception as err:
+        _LOGGER.error(f"Unexpected error during validation: {err}")
+        raise CannotConnect(f"Unexpected error: {err}")
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):

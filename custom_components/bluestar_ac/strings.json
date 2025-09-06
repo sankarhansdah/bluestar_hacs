@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Bluestar Smart AC Setup",
-        "description": "Configure your Bluestar Smart AC integration. You can use it standalone or with an optional MQTT gateway for enhanced performance.",
+        "description": "Configure your Bluestar Smart AC integration. This integration works standalone by connecting directly to the Bluestar API. You can optionally use an MQTT gateway for enhanced performance.",
         "data": {
           "phone": "Phone Number",
           "password": "Password",
@@ -13,9 +13,9 @@
       }
     },
     "error": {
-      "cannot_connect": "Unable to connect to Bluestar API. Please check your credentials and network connection.",
-      "invalid_auth": "Invalid credentials. Please check your phone number and password.",
-      "unknown": "An unexpected error occurred. Please try again."
+      "cannot_connect": "Unable to connect to Bluestar API. Please check your network connection and try again.",
+      "invalid_auth": "Invalid credentials. Please check your phone number and password. The integration will try different phone number formats automatically.",
+      "unknown": "Unexpected error occurred. Please check the logs for more details and try again."
     },
     "abort": {
       "already_configured": "This phone number is already configured."

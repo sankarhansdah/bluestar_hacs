@@ -71,34 +71,60 @@ class BluestarAPI:
         if not self._session:
             raise BluestarAPIError("Session not initialized")
 
-        login_payload = {
-            "auth_id": self.phone,
-            "auth_type": "phone",
-            "password": self.password,
-        }
+        # Try different phone number formats
+        phone_formats = [
+            self.phone,  # Original format
+            f"+91{self.phone}",  # With country code
+            f"91{self.phone}",  # Country code without +
+        ]
 
-        try:
-            async with self._session.post(
-                f"{self.base_url}{LOGIN_ENDPOINT}",
-                headers=self._get_headers(),
-                json=login_payload,
-            ) as response:
-                if response.status != 200:
-                    raise BluestarAPIError(
-                        f"Login failed: {response.status}", response.status
-                    )
+        for phone_format in phone_formats:
+            login_payload = {
+                "auth_id": phone_format,
+                "auth_type": "phone",
+                "password": self.password,
+            }
 
-                data = await response.json()
-                self.session_token = data.get("session_token")
-                
-                if not self.session_token:
-                    raise BluestarAPIError("No session token received")
-                
-                _LOGGER.info("Login successful")
-                return data
+            _LOGGER.info(f"Attempting login with phone: {phone_format}")
 
-        except aiohttp.ClientError as err:
-            raise BluestarAPIError(f"Login request failed: {err}")
+            try:
+                async with self._session.post(
+                    f"{self.base_url}{LOGIN_ENDPOINT}",
+                    headers=self._get_headers(),
+                    json=login_payload,
+                ) as response:
+                    response_text = await response.text()
+                    _LOGGER.info(f"API Response: {response.status} - {response_text}")
+                    
+                    if response.status == 200:
+                        try:
+                            data = await response.json()
+                            self.session_token = data.get("session_token")
+                            
+                            if not self.session_token:
+                                raise BluestarAPIError("No session token received")
+                            
+                            _LOGGER.info("Login successful")
+                            return data
+                        except Exception as e:
+                            _LOGGER.error(f"Failed to parse response: {e}")
+                            continue
+                    elif response.status == 403:
+                        _LOGGER.warning(f"403 Forbidden - trying next phone format")
+                        continue
+                    elif response.status == 401:
+                        _LOGGER.warning(f"401 Unauthorized - invalid credentials")
+                        raise BluestarAPIError("Invalid credentials", response.status)
+                    else:
+                        _LOGGER.warning(f"Login failed with status {response.status}: {response_text}")
+                        continue
+
+            except aiohttp.ClientError as err:
+                _LOGGER.error(f"Network error with phone {phone_format}: {err}")
+                continue
+        
+        # If we get here, all phone formats failed
+        raise BluestarAPIError("Login failed with all phone number formats")
 
     async def get_devices(self) -> Dict[str, Any]:
         """Get all devices."""

@@ -10,7 +10,7 @@ CONF_PASSWORD = "password"
 CONF_BASE_URL = "base_url"
 
 # Default values
-DEFAULT_BASE_URL = "https://api.bluestarindia.com/prod"
+DEFAULT_BASE_URL = "https://n3on22cp53.execute-api.ap-south-1.amazonaws.com/prod"
 DEFAULT_SCAN_INTERVAL = 5  # seconds
 
 # Bluestar API endpoints
