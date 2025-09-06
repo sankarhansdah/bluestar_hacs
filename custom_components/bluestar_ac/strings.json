@@ -12,11 +12,11 @@
         }
       }
     },
-    "error": {
-      "cannot_connect": "Unable to connect to Bluestar API. Please check your network connection and try again.",
-      "invalid_auth": "Invalid credentials. Please check your phone number and password. The integration will try different phone number formats automatically.",
-      "unknown": "Unexpected error occurred. Please check the logs for more details and try again."
-    },
+        "error": {
+          "cannot_connect": "Unable to connect to Bluestar API. The API may be temporarily down (502 error). The official app may still work due to cached credentials. Please try again later.",
+          "invalid_auth": "Invalid credentials. Please check your phone number and password. The integration will try different phone number formats automatically.",
+          "unknown": "Unexpected error occurred. Please check the logs for more details and try again."
+        },
     "abort": {
       "already_configured": "This phone number is already configured."
     }

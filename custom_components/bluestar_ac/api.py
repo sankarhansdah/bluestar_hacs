@@ -67,7 +67,7 @@ class BluestarAPI:
         return headers
 
     async def login(self) -> Dict[str, Any]:
-        """Login to Bluestar API."""
+        """Login to Bluestar API with retry logic."""
         if not self._session:
             raise BluestarAPIError("Session not initialized")
 
@@ -87,41 +87,58 @@ class BluestarAPI:
 
             _LOGGER.info(f"Attempting login with phone: {phone_format}")
 
-            try:
-                async with self._session.post(
-                    f"{self.base_url}{LOGIN_ENDPOINT}",
-                    headers=self._get_headers(),
-                    json=login_payload,
-                ) as response:
-                    response_text = await response.text()
-                    _LOGGER.info(f"API Response: {response.status} - {response_text}")
-                    
-                    if response.status == 200:
-                        try:
-                            data = await response.json()
-                            self.session_token = data.get("session_token")
-                            
-                            if not self.session_token:
-                                raise BluestarAPIError("No session token received")
-                            
-                            _LOGGER.info("Login successful")
-                            return data
-                        except Exception as e:
-                            _LOGGER.error(f"Failed to parse response: {e}")
-                            continue
-                    elif response.status == 403:
-                        _LOGGER.warning(f"403 Forbidden - trying next phone format")
-                        continue
-                    elif response.status == 401:
-                        _LOGGER.warning(f"401 Unauthorized - invalid credentials")
-                        raise BluestarAPIError("Invalid credentials", response.status)
-                    else:
-                        _LOGGER.warning(f"Login failed with status {response.status}: {response_text}")
-                        continue
+            # Retry logic for 502 errors
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    async with self._session.post(
+                        f"{self.base_url}{LOGIN_ENDPOINT}",
+                        headers=self._get_headers(),
+                        json=login_payload,
+                    ) as response:
+                        response_text = await response.text()
+                        _LOGGER.info(f"API Response (attempt {attempt + 1}): {response.status} - {response_text}")
+                        
+                        if response.status == 200:
+                            try:
+                                data = await response.json()
+                                self.session_token = data.get("session_token")
+                                
+                                if not self.session_token:
+                                    raise BluestarAPIError("No session token received")
+                                
+                                _LOGGER.info("Login successful")
+                                return data
+                            except Exception as e:
+                                _LOGGER.error(f"Failed to parse response: {e}")
+                                continue
+                        elif response.status == 403:
+                            _LOGGER.warning(f"403 Forbidden - trying next phone format")
+                            break  # Don't retry 403, try next phone format
+                        elif response.status == 401:
+                            _LOGGER.warning(f"401 Unauthorized - invalid credentials")
+                            raise BluestarAPIError("Invalid credentials", response.status)
+                        elif response.status == 502:
+                            _LOGGER.warning(f"502 Internal Server Error (attempt {attempt + 1}/{max_retries})")
+                            if attempt < max_retries - 1:
+                                import asyncio
+                                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                                continue
+                            else:
+                                _LOGGER.error("API appears to be down (502 errors persist)")
+                                raise BluestarAPIError("API temporarily unavailable (502 error)", response.status)
+                        else:
+                            _LOGGER.warning(f"Login failed with status {response.status}: {response_text}")
+                            break  # Don't retry other errors
 
-            except aiohttp.ClientError as err:
-                _LOGGER.error(f"Network error with phone {phone_format}: {err}")
-                continue
+                except aiohttp.ClientError as err:
+                    _LOGGER.error(f"Network error with phone {phone_format} (attempt {attempt + 1}): {err}")
+                    if attempt < max_retries - 1:
+                        import asyncio
+                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                        continue
+                    else:
+                        break
         
         # If we get here, all phone formats failed
         raise BluestarAPIError("Login failed with all phone number formats")

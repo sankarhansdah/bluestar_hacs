@@ -69,16 +69,18 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
                 "title": f"Bluestar Smart AC ({len(devices)} devices) - {connection_method}",
                 "devices": devices,
             }
-    except BluestarAPIError as err:
-        _LOGGER.error(f"Bluestar API error: {err}")
-        if "Invalid credentials" in str(err) or "401" in str(err):
-            raise InvalidAuth("Invalid credentials. Please check your phone number and password.")
-        elif "403" in str(err):
-            raise InvalidAuth("Access forbidden. Your account may be restricted.")
-        elif "Login failed with all phone number formats" in str(err):
-            raise InvalidAuth("Login failed. Please verify your phone number and password.")
-        else:
-            raise CannotConnect(f"Unable to connect to Bluestar API: {err}")
+        except BluestarAPIError as err:
+            _LOGGER.error(f"Bluestar API error: {err}")
+            if "Invalid credentials" in str(err) or "401" in str(err):
+                raise InvalidAuth("Invalid credentials. Please check your phone number and password.")
+            elif "403" in str(err):
+                raise InvalidAuth("Access forbidden. Your account may be restricted.")
+            elif "502" in str(err) or "API temporarily unavailable" in str(err):
+                raise CannotConnect("The Bluestar API is currently experiencing issues. Please try again later. The official app may still work due to cached credentials.")
+            elif "Login failed with all phone number formats" in str(err):
+                raise InvalidAuth("Login failed. Please verify your phone number and password.")
+            else:
+                raise CannotConnect(f"Unable to connect to Bluestar API: {err}")
     except Exception as err:
         _LOGGER.error(f"Unexpected error during validation: {err}")
         raise CannotConnect(f"Unexpected error: {err}")
