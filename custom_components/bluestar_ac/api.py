@@ -37,6 +37,20 @@ class BluestarAPIError(Exception):
         self.status_code = status_code
 
 
+class BluestarAPIAuthError(Exception):
+    """Exception raised for authentication errors."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class BluestarAPITemporaryError(Exception):
+    """Exception raised for temporary server errors."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
 class BluestarCredentialExtractor:
     """Extract and manage MQTT credentials from login response."""
     
@@ -117,7 +131,7 @@ class BluestarMQTTClient:
     async def connect(self) -> bool:
         """Connect to MQTT broker."""
         try:
-            self.client = mqtt_client.Client(self.client_id)
+            self.client = mqtt_client.Client(client_id=self.client_id, callback_api_version=mqtt_client.CallbackAPIVersion.VERSION1)
             
             # Configure SSL/TLS
             context = ssl.create_default_context()
@@ -309,79 +323,103 @@ class BluestarAPI:
         """Login to Bluestar API with retry logic and multiple phone formats."""
         _LOGGER.info(f"🔐 Attempting login for phone: {self.phone}")
         
+        # Try multiple base URLs (AWS and classic)
+        base_candidates = []
+        if self.base_url:
+            base_candidates.append(self.base_url.rstrip("/"))
+        
+        # Add fallback to the other known host
+        other_base = "https://api.bluestarindia.com/prod" \
+            if "execute-api" in (self.base_url or "") else \
+            "https://n3on22cp53.execute-api.ap-south-1.amazonaws.com/prod"
+        base_candidates.append(other_base)
+        
         # Try multiple phone number formats
-        phone_formats = [self.phone, f"+91{self.phone}", f"91{self.phone}"]
+        phone_formats = [self.phone, f"91{self.phone}", f"+91{self.phone}"]
         
-        for phone_format in phone_formats:
-            _LOGGER.info(f"📱 Trying phone format: {phone_format}")
-            
-            payload = {
-                "auth_id": phone_format,
-                "auth_type": "phone",
-                "password": self.password,
-            }
-
-            max_retries = 3
-            for attempt in range(max_retries):
-                try:
-                    async with self.session.post(
-                        f"{self.base_url}{LOGIN_ENDPOINT}",
-                        headers={
-                            "Content-Type": "application/json",
-                            "X-APP-VER": "v4.11.4-133",
-                            "X-OS-NAME": "Android",
-                            "X-OS-VER": "v13-33",
-                            "User-Agent": "com.bluestarindia.bluesmart",
-                        },
-                        json=payload,
-                    ) as response:
-                        response_text = await response.text()
-                        _LOGGER.info(f"API Response (attempt {attempt + 1}): {response.status} - {response_text}")
-                        
-                        if response.status == 200:
-                            try:
-                                data = await response.json()
-                                self.session_token = data.get("session")
-                                
-                                # Initialize MQTT client with credentials
-                                await self._initialize_mqtt_client(data)
-                                
-                                _LOGGER.info("✅ Login successful")
-                                return data
-                                
-                            except json.JSONDecodeError:
-                                _LOGGER.error(f"Invalid JSON response: {response_text}")
-                                raise BluestarAPIError("Invalid JSON response from server")
-                        
-                        elif response.status == 403:
-                            _LOGGER.error("Access forbidden (403) - Check if account is locked or credentials are correct")
-                            raise BluestarAPIError("Access forbidden - Account may be locked", response.status)
-                        
-                        elif response.status == 401:
-                            _LOGGER.error("Unauthorized (401) - Invalid credentials")
-                            raise BluestarAPIError("Invalid credentials", response.status)
-                        
-                        elif response.status == 502:
-                            _LOGGER.warning(f"502 Internal Server Error (attempt {attempt + 1}/{max_retries})")
-                            if attempt < max_retries - 1:
-                                await asyncio.sleep(2 ** attempt)  # Exponential backoff
-                                continue
-                            else:
-                                raise BluestarAPIError("API temporarily unavailable (502 error)", response.status)
-                        
-                        else:
-                            _LOGGER.error(f"Unexpected response: {response.status} - {response_text}")
-                            raise BluestarAPIError(f"Unexpected response: {response.status}", response.status)
+        last_error = None
+        for base_url in base_candidates:
+            for phone_format in phone_formats:
+                _LOGGER.info(f"📱 Trying base: {base_url}, phone format: {phone_format}")
                 
-                except aiohttp.ClientError as err:
-                    _LOGGER.error(f"Network error with phone {phone_format} (attempt {attempt + 1}): {err}")
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
-                        continue
-                    else:
-                        break
+                payload = {
+                    "auth_id": phone_format,
+                    "auth_type": 1,  # Critical: numeric, not "phone"
+                    "password": self.password,
+                }
+
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        async with self.session.post(
+                            f"{base_url}{LOGIN_ENDPOINT}",
+                            headers={
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                                "X-APP-VER": "v4.11.4-133",
+                                "X-OS-NAME": "Android",
+                                "X-OS-VER": "v13-33",
+                                "User-Agent": "com.bluestarindia.bluesmart",
+                            },
+                            json=payload,
+                            timeout=aiohttp.ClientTimeout(total=30),
+                        ) as response:
+                            response_text = await response.text()
+                            _LOGGER.info(f"API Response (attempt {attempt + 1}): {response.status} - {response_text}")
+                            
+                            if response.status == 200:
+                                try:
+                                    data = await response.json()
+                                    self.session_token = data.get("session")
+                                    
+                                    # Initialize MQTT client with credentials
+                                    await self._initialize_mqtt_client(data)
+                                    
+                                    _LOGGER.info("✅ Login successful")
+                                    return data
+                                    
+                                except json.JSONDecodeError:
+                                    _LOGGER.error(f"Invalid JSON response: {response_text}")
+                                    last_error = BluestarAPIError("Invalid JSON response from server")
+                                    continue
+                            
+                            elif response.status == 403:
+                                _LOGGER.error("Access forbidden (403) - Check if account is locked or credentials are correct")
+                                last_error = BluestarAPIError("Access forbidden - Account may be locked", response.status)
+                                continue
+                            
+                            elif response.status == 401:
+                                _LOGGER.error("Unauthorized (401) - Invalid credentials")
+                                last_error = BluestarAPIError("Invalid credentials", response.status)
+                                continue
+                            
+                            elif response.status == 502:
+                                _LOGGER.warning(f"502 Internal Server Error (attempt {attempt + 1}/{max_retries})")
+                                if attempt < max_retries - 1:
+                                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                                    continue
+                                else:
+                                    last_error = BluestarAPIError("API temporarily unavailable (502 error)", response.status)
+                                    continue
+                            
+                            else:
+                                _LOGGER.error(f"Unexpected response: {response.status} - {response_text}")
+                                last_error = BluestarAPIError(f"Unexpected response: {response.status}", response.status)
+                                continue
+                    
+                    except aiohttp.ClientError as err:
+                        _LOGGER.error(f"Network error with phone {phone_format} (attempt {attempt + 1}): {err}")
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                            continue
+                        else:
+                            last_error = BluestarAPIError(f"Network error: {err}")
+                            continue
         
-        raise BluestarAPIError("Login failed with all phone number formats")
+        # If we get here, all attempts failed
+        if last_error:
+            raise last_error
+        raise BluestarAPIError("Login failed with all phone number formats and base URLs")
 
     async def _initialize_mqtt_client(self, login_data: Dict[str, Any]) -> bool:
         """Initialize MQTT client with credentials from login response."""
