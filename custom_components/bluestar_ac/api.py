@@ -119,8 +119,10 @@ class BluestarMQTTClient:
         try:
             self.client = mqtt_client.Client(client_id=self.client_id, callback_api_version=mqtt_client.CallbackAPIVersion.VERSION1)
             
-            # Configure SSL/TLS
-            context = ssl.create_default_context()
+            # Configure SSL/TLS - use thread-safe approach
+            import asyncio
+            loop = asyncio.get_event_loop()
+            context = await loop.run_in_executor(None, ssl.create_default_context)
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
             
@@ -135,20 +137,26 @@ class BluestarMQTTClient:
             endpoint = self.credentials["endpoint"]
             _LOGGER.info(f"🔌 Connecting to MQTT broker: {endpoint}")
             
-            self.client.connect(endpoint, 443, 30)
+            self.client.connect(endpoint, 443, 10)  # Reduced keepalive to 10 seconds
             self.client.loop_start()
             
-            # Wait for connection
-            timeout = 30
+            # Wait for connection with shorter timeout
+            timeout = 10  # Reduced from 30 to 10 seconds
             while not self.is_connected and timeout > 0:
-                await asyncio.sleep(1)
-                timeout -= 1
+                await asyncio.sleep(0.5)  # Check more frequently
+                timeout -= 0.5
             
             if self.is_connected:
                 _LOGGER.info("✅ MQTT Connected successfully")
                 return True
             else:
                 _LOGGER.warning("⚠️ MQTT connection timeout - continuing with HTTP API only")
+                # Clean up failed connection
+                try:
+                    self.client.loop_stop()
+                    self.client.disconnect()
+                except:
+                    pass
                 return False
                 
         except Exception as error:
