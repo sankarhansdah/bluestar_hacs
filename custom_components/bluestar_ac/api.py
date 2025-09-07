@@ -148,7 +148,7 @@ class BluestarMQTTClient:
                 _LOGGER.info("✅ MQTT Connected successfully")
                 return True
             else:
-                _LOGGER.error("❌ MQTT connection timeout")
+                _LOGGER.warning("⚠️ MQTT connection timeout - continuing with HTTP API only")
                 return False
                 
         except Exception as error:
@@ -309,8 +309,8 @@ class BluestarAPI:
         """Login to Bluestar API with retry logic and multiple phone formats."""
         _LOGGER.info(f"🔐 Attempting login for phone: {self.phone}")
         
-        # Try multiple phone number formats
-        phone_formats = [self.phone, f"+91{self.phone}", f"91{self.phone}"]
+        # Use exact phone format that works with API
+        phone_formats = [self.phone]
         
         for phone_format in phone_formats:
             _LOGGER.info(f"📱 Trying phone format: {phone_format}")
