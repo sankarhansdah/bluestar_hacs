@@ -334,6 +334,7 @@ class BluestarAPI:
                             "User-Agent": "com.bluestarindia.bluesmart",
                         },
                         json=payload,
+                        timeout=aiohttp.ClientTimeout(total=30),
                     ) as response:
                         response_text = await response.text()
                         _LOGGER.info(f"API Response (attempt {attempt + 1}): {response.status} - {response_text}")
@@ -367,7 +368,7 @@ class BluestarAPI:
                                 await asyncio.sleep(2 ** attempt)  # Exponential backoff
                                 continue
                             else:
-                                raise BluestarAPIError("API temporarily unavailable (502 error)", response.status)
+                                raise BluestarAPIError("API temporarily unavailable (502 error). Please try again in a few minutes.", response.status)
                         
                         else:
                             _LOGGER.error(f"Unexpected response: {response.status} - {response_text}")
@@ -423,14 +424,18 @@ class BluestarAPI:
         _LOGGER.info(f"Fetching devices with headers: {headers}")
 
         async with self.session.get(
-            f"{self.base_url}{DEVICES_ENDPOINT}", headers=headers
+            f"{self.base_url}{DEVICES_ENDPOINT}", 
+            headers=headers,
+            timeout=aiohttp.ClientTimeout(total=30),
         ) as response:
             if response.status == 401:
                 _LOGGER.warning("Session expired, attempting re-login")
                 await self.login()
                 headers = self._get_auth_headers()
                 async with self.session.get(
-                    f"{self.base_url}{DEVICES_ENDPOINT}", headers=headers
+                    f"{self.base_url}{DEVICES_ENDPOINT}", 
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=30),
                 ) as retry_response:
                     if not retry_response.ok:
                         raise BluestarAPIError(

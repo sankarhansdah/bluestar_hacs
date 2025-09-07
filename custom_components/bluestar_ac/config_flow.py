@@ -73,7 +73,7 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
         elif "403" in str(err):
             raise InvalidAuth("Access forbidden. Your account may be restricted.")
         elif "502" in str(err) or "API temporarily unavailable" in str(err):
-            raise CannotConnect("The Bluestar API is currently experiencing issues. Please try again later. The official app may still work due to cached credentials.")
+            raise CannotConnect("The Bluestar API is currently experiencing issues. Please try again in a few minutes. The official app may still work due to cached credentials.")
         elif "Login failed with all phone number formats" in str(err):
             raise InvalidAuth("Login failed. Please verify your phone number and password.")
         else:
