@@ -36,6 +36,12 @@ async def async_setup_entry(
     _LOGGER.debug("CL2 climate async_setup_entry() start")
     
     try:
+        # Check if coordinator exists in hass.data
+        if config_entry.entry_id not in hass.data.get(DOMAIN, {}):
+            _LOGGER.error("CLX coordinator not found in hass.data for entry_id=%s. Main integration setup may have failed.", config_entry.entry_id)
+            _LOGGER.error("CLX available keys in hass.data[%s]: %s", DOMAIN, list(hass.data.get(DOMAIN, {}).keys()))
+            return
+        
         coordinator: BluestarDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
         _LOGGER.debug("CL3 got coordinator from hass.data")
         
