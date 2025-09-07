@@ -39,9 +39,18 @@ async def async_setup_entry(
 
     entities = []
     devices = coordinator.get_all_devices()
+    _LOGGER.info(f"🔍 Found {len(devices)} devices for climate setup")
+    
     for device_id in devices.keys():
-        entities.append(BluestarClimateEntity(coordinator, device_id))
+        _LOGGER.info(f"🔍 Creating climate entity for device: {device_id}")
+        try:
+            entity = BluestarClimateEntity(coordinator, device_id)
+            entities.append(entity)
+            _LOGGER.info(f"✅ Successfully created climate entity for {device_id}")
+        except Exception as e:
+            _LOGGER.error(f"❌ Failed to create climate entity for {device_id}: {e}")
 
+    _LOGGER.info(f"🔍 Created {len(entities)} climate entities")
     async_add_entities(entities)
 
 
