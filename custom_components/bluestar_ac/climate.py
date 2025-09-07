@@ -38,7 +38,8 @@ async def async_setup_entry(
     coordinator: BluestarDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     entities = []
-    for device_id in coordinator.get_all_devices():
+    devices = coordinator.get_all_devices()
+    for device_id in devices.keys():
         entities.append(BluestarClimateEntity(coordinator, device_id))
 
     async_add_entities(entities)

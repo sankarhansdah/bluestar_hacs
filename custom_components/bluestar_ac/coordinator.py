@@ -134,7 +134,7 @@ class BluestarDataUpdateCoordinator(DataUpdateCoordinator):
             if not self.api.session_token:
                 await self.api.login()
             
-            return await self.api.force_sync(device_id)
+            return self.api.force_sync(device_id)
         except BluestarAPIError as err:
             _LOGGER.error(f"Force sync failed for device {device_id}: {err}")
             raise
