@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
-from .api import BluestarAPI, BluestarAPIError
+from .api import BluestarAPI, BluestarAPIError, BluestarAPIAuthError, BluestarAPITemporaryError
 from .const import (
     CONF_BASE_URL,
     CONF_PASSWORD,
@@ -41,9 +41,9 @@ class InvalidAuth(HomeAssistantError):
 async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str, Any]:
     """Validate the user input allows us to connect."""
     api = BluestarAPI(
-        phone=data[CONF_PHONE],
+        phone=data[CONF_PHONE].strip(),
         password=data[CONF_PASSWORD],
-        base_url=data[CONF_BASE_URL],
+        base_url=data.get(CONF_BASE_URL) or DEFAULT_BASE_URL,
     )
 
     try:
@@ -66,6 +66,12 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
                 "title": f"Bluestar Smart AC ({len(devices)} devices) - {connection_method}",
                 "devices": devices,
             }
+    except BluestarAPIAuthError as err:
+        _LOGGER.error(f"Authentication error: {err}")
+        raise InvalidAuth("Invalid credentials. Please check your phone number and password.")
+    except BluestarAPITemporaryError as err:
+        _LOGGER.error(f"Temporary server error: {err}")
+        raise CannotConnect("Cannot reach Bluestar servers (temporary issue). Try again.")
     except BluestarAPIError as err:
         _LOGGER.error(f"Bluestar API error: {err}")
         if "Invalid credentials" in str(err) or "401" in str(err):
@@ -73,7 +79,7 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
         elif "403" in str(err):
             raise InvalidAuth("Access forbidden. Your account may be restricted.")
         elif "502" in str(err) or "API temporarily unavailable" in str(err):
-            raise CannotConnect("The Bluestar API is currently experiencing issues. Please try again in a few minutes. The official app may still work due to cached credentials.")
+            raise CannotConnect("The Bluestar API is currently experiencing issues. Please try again later. The official app may still work due to cached credentials.")
         elif "Login failed with all phone number formats" in str(err):
             raise InvalidAuth("Login failed. Please verify your phone number and password.")
         else:

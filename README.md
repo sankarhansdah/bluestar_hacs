@@ -1,8 +1,8 @@
 # Bluestar Smart AC (Unofficial) - Home Assistant Integration
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
-[![GitHub release](https://img.shields.io/github/release/bluestar-integration/bluestar_hacs.svg)](https://github.com/bluestar-integration/bluestar_hacs/releases)
-[![GitHub stars](https://img.shields.io/github/stars/bluestar-integration/bluestar_hacs.svg?style=social&label=Stars)](https://github.com/bluestar-integration/bluestar_hacs)
+[![GitHub release](https://img.shields.io/github/release/sankarhansdah/bluestar_hacs.svg)](https://github.com/sankarhansdah/bluestar_hacs/releases)
+[![GitHub stars](https://img.shields.io/github/stars/sankarhansdah/bluestar_hacs.svg?style=social&label=Stars)](https://github.com/sankarhansdah/bluestar_hacs)
 
 An **unofficial** Home Assistant integration for Bluestar Smart AC units. This integration provides **standalone** control over your Bluestar Smart AC devices through Home Assistant, including temperature control, fan speed, swing modes, and more.
 
@@ -44,288 +44,118 @@ An **unofficial** Home Assistant integration for Bluestar Smart AC units. This i
 1. **Download Integration**:
    ```bash
    cd /config/custom_components
-   git clone https://github.com/sankarhansdah/bluestar_hacs.git bluestar_ac
+   git clone https://github.com/sankarhansdah/bluestar_hacs.git
    ```
 
 2. **Restart Home Assistant**
 
-3. **Configure Integration**:
+3. **Add Integration**:
    - Go to Settings → Devices & Services
    - Click "Add Integration"
    - Search for "Bluestar Smart AC"
 
-## ⚙️ Configuration
+## 🔧 Configuration
 
-### Required Fields
+### Required Information
 
-- **Phone Number**: Your Bluestar account phone number (include country code)
+- **Phone Number**: Your Bluestar account phone number
 - **Password**: Your Bluestar account password
+- **API Base URL**: `https://n3on22cp53.execute-api.ap-south-1.amazonaws.com/prod` (default)
 
-### Optional Fields
+### Optional Configuration
 
-- **MQTT Gateway URL**: URL of your Node.js gateway (for enhanced performance)
-  - Example: `http://localhost:3000`
-  - Example: `http://192.168.1.100:3000`
-  - **Note**: Integration works standalone without this
-- **Base URL**: Bluestar API base URL (usually not needed)
+- **MQTT Gateway URL**: For enhanced performance (optional)
 
-### Configuration Examples
+## 📱 Screenshots
 
-```yaml
-# Standalone Mode (Default)
-phone: "+919876543210"
-password: "your_password"
+*[Add screenshots of your integration in Home Assistant here]*
 
-# With MQTT Gateway (Enhanced Performance)
-phone: "+919876543210"
-password: "your_password"
-mqtt_gateway_url: "http://localhost:3000"
-```
-
-## 🔧 How It Works
-
-### Standalone Mode (Default)
-The integration works **completely standalone** by connecting directly to the Bluestar cloud API:
-- **Direct API**: Communicates directly with Bluestar's cloud servers
-- **No Dependencies**: No additional software or services required
-- **Automatic Fallback**: Built-in retry mechanisms and error handling
-- **Full Control**: All AC features available through Home Assistant
-
-### Enhanced Mode (Optional)
-For users who want **maximum performance** and **reliability**:
-- **MQTT Gateway**: Use your existing Node.js MQTT gateway
-- **Faster Response**: Direct MQTT communication with AWS IoT
-- **Better Reliability**: Proven control algorithm from original app
-- **Automatic Fallback**: Falls back to direct API if gateway unavailable
-
-## 📱 Entities
-
-For each Bluestar Smart AC device, the integration creates:
-
-### Climate Entity
-- **Main AC Control**: Temperature, HVAC mode, fan speed, swing
-- **Modes**: Off, Fan Only, Cool, Dry, Auto
-- **Temperature Range**: 16.0°C - 30.0°C (0.5°C steps)
-
-### Select Entities
-- **Vertical Swing**: Off, 15°, 30°, 45°, 60°, Auto
-- **Horizontal Swing**: Off, 15°, 30°, 45°, 60°, Auto
-
-### Switch Entity
-- **Display**: Turn AC display on/off
-
-### Button Entity
-- **Force Sync**: Manually sync device state
-
-### Sensor Entities
-- **RSSI**: Signal strength in dBm
-- **Error Code**: Current error status
-
-## Usage
-
-### Basic Control
-
-```yaml
-# Turn on AC and set to cool mode
-service: climate.set_hvac_mode
-target:
-  entity_id: climate.ac_climate
-data:
-  hvac_mode: cool
-
-# Set temperature
-service: climate.set_temperature
-target:
-  entity_id: climate.ac_climate
-data:
-  temperature: 24.0
-
-# Set fan speed
-service: climate.set_fan_mode
-target:
-  entity_id: climate.ac_climate
-data:
-  fan_mode: medium
-```
-
-### Advanced Control
-
-```yaml
-# Set vertical swing
-service: select.select_option
-target:
-  entity_id: select.ac_vertical_swing
-data:
-  option: "30°"
-
-# Turn off display
-service: switch.turn_off
-target:
-  entity_id: switch.ac_display
-
-# Force sync device
-service: button.press
-target:
-  entity_id: button.ac_force_sync
-```
-
-### Automation Examples
-
-```yaml
-# Turn on AC when temperature is high
-automation:
-  - alias: "Turn on AC when hot"
-    trigger:
-      - platform: numeric_state
-        entity_id: sensor.outdoor_temperature
-        above: 30
-    action:
-      - service: climate.set_hvac_mode
-        target:
-          entity_id: climate.ac_climate
-        data:
-          hvac_mode: cool
-      - service: climate.set_temperature
-        target:
-          entity_id: climate.ac_climate
-        data:
-          temperature: 24.0
-
-# Turn off AC when leaving home
-automation:
-  - alias: "Turn off AC when leaving"
-    trigger:
-      - platform: state
-        entity_id: person.you
-        to: "not_home"
-    action:
-      - service: climate.set_hvac_mode
-        target:
-          entity_id: climate.ac_climate
-        data:
-          hvac_mode: off
-```
-
-## Troubleshooting
+## 🛠️ Troubleshooting
 
 ### Common Issues
 
-1. **"Cannot connect" error**:
-   - Check your phone number and password
-   - Ensure your internet connection is working
-   - Verify the MQTT gateway URL is correct (if using gateway)
+1. **"Unable to connect to Bluestar API"**
+   - ✅ **FIXED**: This was caused by incorrect `auth_type` format
+   - The integration now uses the correct numeric format
 
-2. **"Invalid credentials" error**:
-   - Double-check your phone number format (include country code)
-   - Verify your password is correct
-   - Try logging into the official Bluestar app first
+2. **"Invalid credentials"**
+   - Verify your phone number and password
+   - Try different phone number formats (with/without +91)
 
-3. **Devices not appearing**:
-   - Check if devices are connected in the official app
-   - Try the Force Sync button
-   - Check the integration logs for errors
+3. **"No devices found"**
+   - Ensure your Bluestar account has devices registered
+   - Check if devices are online in the official Bluestar app
 
-4. **Control commands not working**:
-   - Ensure the device is online and connected
-   - Try the Force Sync button
-   - Check if using MQTT gateway (recommended)
+### Debug Mode
 
-### Debugging
-
-Enable debug logging:
-
+Enable debug logging in `configuration.yaml`:
 ```yaml
 logger:
+  default: warning
   logs:
     custom_components.bluestar_ac: debug
 ```
 
-### Gateway Issues
+## 🔧 Technical Details
 
-If using the MQTT gateway:
+### API Integration
 
-1. **Check Gateway Status**:
-   ```bash
-   curl http://localhost:3000/api/devices
-   ```
+- **Base URL**: `https://n3on22cp53.execute-api.ap-south-1.amazonaws.com/prod`
+- **Authentication**: Phone number + password
+- **Protocol**: REST API + AWS IoT MQTT
+- **Headers**: Exact match with official Bluestar app
 
-2. **Check Gateway Logs**:
-   ```bash
-   # In your gateway directory
-   npm start
-   ```
+### Supported Commands
 
-3. **Test Gateway Login**:
-   ```bash
-   curl -X POST http://localhost:3000/api/login \
-     -H "Content-Type: application/json" \
-     -d '{"auth_id":"+919876543210","auth_type":"phone","password":"your_password"}'
-   ```
+- **Power**: `{"pow": 1, "ts": <timestamp>, "src": "anmq"}`
+- **Temperature**: `{"stemp": "24.0", "ts": <timestamp>, "src": "anmq"}`
+- **Mode**: `{"mode": 1, "ts": <timestamp>, "src": "anmq"}`
+- **Fan Speed**: `{"fspd": 2, "ts": <timestamp>, "src": "anmq"}`
+- **Swing**: `{"hswing": 1, "vswing": 1, "ts": <timestamp>, "src": "anmq"}`
 
-## Technical Details
+## 📊 Changelog
 
-### Protocol Implementation
+### Version 2.0.0 (Latest)
+- ✅ **FIXED**: Authentication issue (`auth_type` now uses numeric format)
+- ✅ **IMPROVED**: Better error handling and user messages
+- ✅ **ADDED**: Multiple phone number format support
+- ✅ **ADDED**: API endpoint fallback logic
+- ✅ **ADDED**: Proper timeout handling
+- ✅ **ADDED**: Enhanced logging and debugging
 
-This integration uses the exact same control protocol as the official Bluestar Android app:
+### Version 1.0.0
+- Initial release
+- Basic climate control
+- Fan control
+- Switch controls
 
-- **MQTT Primary**: Uses AWS IoT shadow updates with exact payload structure
-- **HTTP Fallback**: Direct API calls with mode-specific preferences
-- **Force Sync**: Manual state synchronization when needed
+## 🤝 Contributing
 
-### Control Algorithm
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-The integration follows the "EXACT BLUESTAR CONTROL ALGORITHM":
-
-1. **MQTT Gateway** (if configured): Send control via tested Node.js gateway
-2. **Mode Preferences**: Use Bluestar's mode-specific preferences API
-3. **Direct Shadow**: Fallback to direct AWS IoT shadow updates
-4. **Force Sync**: Final fallback for state synchronization
-
-### Data Flow
-
-```
-Home Assistant → Integration → MQTT Gateway → AWS IoT → Bluestar Device
-                     ↓
-                Direct API (fallback)
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-### Development Setup
-
-1. **Clone Repository**:
-   ```bash
-   git clone https://github.com/bluestar-integration/bluestar_hacs.git
-   cd bluestar_hacs
-   ```
-
-2. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run Tests**:
-   ```bash
-   python -m pytest
-   ```
-
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Disclaimer
+## ⚠️ Disclaimer
 
-This is an unofficial integration and is not affiliated with Bluestar India. Use at your own risk. The authors are not responsible for any damage to your devices or account.
+This is an **unofficial** integration. It is not affiliated with or endorsed by Bluestar India. Use at your own risk.
 
-## Support
+## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/bluestar-integration/bluestar_hacs/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/bluestar-integration/bluestar_hacs/discussions)
+- **Issues**: [GitHub Issues](https://github.com/sankarhansdah/bluestar_hacs/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/sankarhansdah/bluestar_hacs/discussions)
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Based on reverse engineering of the official Bluestar Smart AC Android app
-- Uses the exact MQTT protocol implementation from the original app
-- Built on top of the existing Node.js MQTT gateway implementation
+- Bluestar India for the Smart AC platform
+- Home Assistant community for integration framework
+- Contributors and testers
+
+---
+
+**Made with ❤️ for the Home Assistant community**
