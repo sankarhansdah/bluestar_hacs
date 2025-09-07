@@ -11,6 +11,7 @@ from homeassistant.components.climate import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.const import UnitOfTemperature
 
 from .const import (
@@ -20,7 +21,6 @@ from .const import (
     HVAC_MODE_TO_BLUESTAR,
 )
 from .coordinator import BluestarDataUpdateCoordinator
-from .entity import BluestarEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class BluestarClimateEntity(BluestarEntity, ClimateEntity):
+class BluestarClimateEntity(CoordinatorEntity, ClimateEntity):
     """Representation of a Bluestar AC climate entity."""
 
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.AUTO]
@@ -68,8 +68,26 @@ class BluestarClimateEntity(BluestarEntity, ClimateEntity):
 
     def __init__(self, coordinator: BluestarDataUpdateCoordinator, device_id: str) -> None:
         """Initialize the climate entity."""
-        super().__init__(coordinator, device_id)
-        self._attr_name = f"{self.device_name} Climate"
+        super().__init__(coordinator)
+        self.device_id = device_id
+        self._attr_unique_id = f"{device_id}_climate"
+        
+        # Set device info
+        device = coordinator.get_device(device_id)
+        if device:
+            self._attr_name = f"{device.get('name', 'Bluestar AC')} Climate"
+        else:
+            self._attr_name = f"Bluestar AC {device_id} Climate"
+
+    @property
+    def device_data(self) -> dict:
+        """Get device data from coordinator."""
+        return self.coordinator.get_device(self.device_id) or {}
+
+    @property
+    def device_name(self) -> str:
+        """Get device name."""
+        return self.device_data.get("name", f"Bluestar AC {self.device_id}")
 
     @property
     def current_temperature(self) -> float | None:
