@@ -317,7 +317,7 @@ class BluestarAPI:
             
             payload = {
                 "auth_id": phone_format,
-                "auth_type": "phone",
+                "auth_type": 1,
                 "password": self.password,
             }
 
