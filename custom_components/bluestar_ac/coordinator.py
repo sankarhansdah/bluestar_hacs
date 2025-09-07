@@ -37,14 +37,18 @@ class BluestarDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> Dict[str, Any]:
         """Update data via library."""
+        _LOGGER.debug("C1 coordinator _async_update_data() start")
         try:
             # Ensure we're logged in before making requests
             if not self.api.session_token:
+                _LOGGER.debug("C2 re-logging in to API")
                 await self.api.login()
             
+            _LOGGER.debug("C3 fetching devices from API")
             # Get devices and states
             data = await self.api.get_devices()
             
+            _LOGGER.debug("C4 processing device data")
             # Extract devices and states
             self.devices = {device["thing_id"]: device for device in data.get("things", [])}
             self.states = data.get("states", {})
@@ -78,14 +82,18 @@ class BluestarDataUpdateCoordinator(DataUpdateCoordinator):
                     "raw_state": state,
                 }
             
+            _LOGGER.debug("C5 coordinator got %d devices: %s", len(processed_devices), str(list(processed_devices.keys()))[:200])
+            
             return {
                 "devices": processed_devices,
                 "raw_data": data,
             }
 
         except BluestarAPIError as err:
+            _LOGGER.exception("C6 coordinator BluestarAPIError: %s", err)
             raise UpdateFailed(f"Error communicating with Bluestar API: {err}")
         except Exception as err:
+            _LOGGER.exception("C7 coordinator unexpected error: %s", err)
             raise UpdateFailed(f"Unexpected error: {err}")
 
     async def control_device(self, device_id: str, control_data: Dict[str, Any]) -> Dict[str, Any]:

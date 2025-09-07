@@ -19,12 +19,13 @@ from .const import (
     BLUESTAR_TO_HVAC_MODE,
     FAN_MODE_TO_BLUESTAR,
     HVAC_MODE_TO_BLUESTAR,
+    DOMAIN,
 )
 from .coordinator import BluestarDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-_LOGGER.info("🔍 Climate platform module loaded")
+_LOGGER.debug("CL1 climate module imported")
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -32,25 +33,32 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Bluestar climate entities."""
-    _LOGGER.info("🔍 async_setup_entry called for climate platform")
+    _LOGGER.debug("CL2 climate async_setup_entry() start")
     
-    coordinator: BluestarDataUpdateCoordinator = hass.data[config_entry.entry_id]
-    
-    # Get all devices
-    devices = coordinator.get_all_devices()
-    _LOGGER.info(f"🔍 Found {len(devices)} devices for climate platform")
-    
-    entities = []
-    for device_id in devices.keys():
-        try:
-            entity = BluestarClimateEntity(coordinator, device_id)
-            entities.append(entity)
-            _LOGGER.info(f"✅ Created climate entity for device {device_id}")
-        except Exception as e:
-            _LOGGER.error(f"❌ Failed to create climate entity for device {device_id}: {e}")
-    
-    _LOGGER.info(f"🔍 Adding {len(entities)} climate entities")
-    async_add_entities(entities)
+    try:
+        coordinator: BluestarDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+        _LOGGER.debug("CL3 got coordinator from hass.data")
+        
+        # Get all devices
+        devices = coordinator.get_all_devices()
+        _LOGGER.debug("CL4 found %d devices for climate platform", len(devices))
+        
+        entities = []
+        for device_id in devices.keys():
+            try:
+                entity = BluestarClimateEntity(coordinator, device_id)
+                entities.append(entity)
+                _LOGGER.debug("CL5 created climate entity for device %s", device_id)
+            except Exception as e:
+                _LOGGER.exception("CL6 failed to create climate entity for device %s: %s", device_id, e)
+        
+        _LOGGER.debug("CL7 adding %d climate entities", len(entities))
+        async_add_entities(entities, update_before_add=True)
+        _LOGGER.debug("CL8 climate async_setup_entry() done")
+        
+    except Exception as e:
+        _LOGGER.exception("CLX climate setup failed: %s", e)
+        raise
 
 
 class BluestarClimateEntity(CoordinatorEntity, ClimateEntity):
