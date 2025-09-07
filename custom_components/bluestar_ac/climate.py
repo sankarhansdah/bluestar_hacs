@@ -28,6 +28,9 @@ from .coordinator import BluestarDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+# Add module-level logging to see if file is imported
+_LOGGER.info("🔍 Climate platform module loaded")
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
