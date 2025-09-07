@@ -48,7 +48,7 @@ class BluestarClimateEntity(CoordinatorEntity, ClimateEntity):
     """Representation of a Bluestar Smart AC climate entity."""
 
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.FAN_ONLY, HVACMode.COOL, HVACMode.DRY, HVACMode.AUTO]
-    _attr_fan_modes = [FanMode.LOW, FanMode.MEDIUM, FanMode.HIGH, FanMode.AUTO]
+    _attr_fan_modes = ["low", "medium", "high", "auto"]
     _attr_temperature_unit = "celsius"
     _attr_target_temperature_step = TEMP_STEP
     _attr_min_temp = MIN_TEMP
@@ -114,8 +114,8 @@ class BluestarClimateEntity(CoordinatorEntity, ClimateEntity):
         state = self.coordinator.get_device_state(self.device_id)
         if state:
             fan_speed = state.get("fan_speed", 2)
-            return BLUESTAR_TO_FAN_MODE.get(fan_speed, FanMode.LOW)
-        return FanMode.LOW
+            return BLUESTAR_TO_FAN_MODE.get(fan_speed, "low")
+        return "low"
 
     @property
     def swing_modes(self) -> Optional[list[str]]:
